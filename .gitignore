@@ -1,5 +1,6 @@
 # Compiled files
 *.o
+*.out
 *.spv
 
 # VS Code
