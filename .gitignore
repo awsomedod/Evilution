@@ -1,0 +1,9 @@
+# Compiled files
+*.o
+*.spv
+
+# VS Code
+.vscode/
+
+# Environment variables
+.env
