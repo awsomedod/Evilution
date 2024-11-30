@@ -8,7 +8,7 @@ namespace evilution {
 
 class EvilutionWindow {
 
-    public:
+      public:
         EvilutionWindow(int w, int h, std::string name);
         ~EvilutionWindow();
 
@@ -20,7 +20,7 @@ class EvilutionWindow {
 
         void createWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
 
-    private:
+      private:
         void initWindow();
 
         const int width;
@@ -29,4 +29,4 @@ class EvilutionWindow {
         std::string windowName;
         GLFWwindow* window;
 };
-}
+} // namespace evilution
