@@ -4,6 +4,7 @@
 #include "evilution_pipeline.hpp"
 #include "evilution_swap_chain.hpp"
 #include "evilution_window.hpp"
+#include "evilution_model.hpp"
 
 
 // std
@@ -23,7 +24,15 @@ class FirstApp {
 
         void run();
 
+        void sierpinski(
+            std::vector<EvilutionModel::Vertex> &vertices,
+            int depth,
+            glm::vec2 left,
+            glm::vec2 right,
+            glm::vec2 top);
+
       private:
+        void loadModel();
         void createPipelineLayout();
         void createPipeline();
         void createCommandBuffers();
@@ -35,5 +44,6 @@ class FirstApp {
         std::unique_ptr<EvilutionPipeline> evilutionPipeline;
         VkPipelineLayout pipelineLayout;
         std::vector<VkCommandBuffer> commandBuffers;
+        std::unique_ptr<EvilutionModel> evilutionModel;
 };
 } // namespace evilution

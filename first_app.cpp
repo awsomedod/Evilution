@@ -4,10 +4,10 @@
 #include <array>
 #include <stdexcept>
 
-
 namespace evilution {
 
 FirstApp::FirstApp() {
+        loadModel();
         createPipelineLayout();
         createPipeline();
         createCommandBuffers();
@@ -22,6 +22,32 @@ void FirstApp::run() {
         }
 
         vkDeviceWaitIdle(evilutionDevice.device());
+}
+
+void FirstApp::sierpinski(
+    std::vector<EvilutionModel::Vertex> &vertices,
+    int depth,
+    glm::vec2 left,
+    glm::vec2 right,
+    glm::vec2 top) {
+  if (depth <= 0) {
+    vertices.push_back({top});
+    vertices.push_back({right});
+    vertices.push_back({left});
+  } else {
+    auto leftTop = 0.5f * (left + top);
+    auto rightTop = 0.5f * (right + top);
+    auto leftRight = 0.5f * (left + right);
+    sierpinski(vertices, depth - 1, left, leftRight, leftTop);
+    sierpinski(vertices, depth - 1, leftRight, right, rightTop);
+    sierpinski(vertices, depth - 1, leftTop, rightTop, top);
+  }
+}
+
+void FirstApp::loadModel() {
+        std::vector<EvilutionModel::Vertex> vertices = {};
+        sierpinski(vertices, 5, {-0.5f, 0.5f}, {0.5f, 0.5f}, {0.0f, -0.5f});
+        evilutionModel = std::make_unique<EvilutionModel>(evilutionDevice, vertices);
 }
 
 void FirstApp::createPipelineLayout() {
@@ -77,7 +103,7 @@ void FirstApp::createCommandBuffers() {
                 renderPassInfo.renderArea.extent = evilutionSwapChain.getSwapChainExtent();
 
                 std::array<VkClearValue, 2> clearValues{};
-                clearValues[0].color = {0.0f, 0.5f, 0.0f, 1.0f};
+                clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
                 clearValues[1].depthStencil = {1.0f, 0};
                 renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
                 renderPassInfo.pClearValues = clearValues.data();
@@ -85,7 +111,8 @@ void FirstApp::createCommandBuffers() {
                 vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
                 evilutionPipeline->bind(commandBuffers[i]);
-                vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+                evilutionModel->bind(commandBuffers[i]);
+                evilutionModel->draw(commandBuffers[i]);
 
                 vkCmdEndRenderPass(commandBuffers[i]);
 

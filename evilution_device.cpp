@@ -7,6 +7,7 @@
 #include <unordered_set>
 
 namespace evilution {
+        int alpha = 9;
 
 // local callback functions
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -67,7 +68,6 @@ void EvilutionDevice::createInstance() {
         }
 
         VkApplicationInfo appInfo = {};
-        int delta = 11;
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "LittleVulkanEngine App";
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -147,9 +147,6 @@ void EvilutionDevice::createLogicalDevice() {
         deviceFeatures.samplerAnisotropy = VK_TRUE;
 
         VkDeviceCreateInfo createInfo = {};
-        int alph = 9;
-        int beta = 10;
-        int gamma = alph + beta;
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
