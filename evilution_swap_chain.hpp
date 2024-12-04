@@ -7,7 +7,7 @@
 
 // std lib headers
 #include <vector>
-
+#include <memory>
 namespace evilution {
 
 class EvilutionSwapChain {
@@ -15,10 +15,11 @@ class EvilutionSwapChain {
         static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
         EvilutionSwapChain(EvilutionDevice& deviceRef, VkExtent2D windowExtent);
+        EvilutionSwapChain(EvilutionDevice& deviceRef, VkExtent2D windowExtent, std::shared_ptr<EvilutionSwapChain> previous);
         ~EvilutionSwapChain();
 
         EvilutionSwapChain(const EvilutionSwapChain&) = delete;
-        void operator=(const EvilutionSwapChain&) = delete;
+        EvilutionSwapChain& operator=(const EvilutionSwapChain&) = delete;
 
         VkFramebuffer getFrameBuffer(int index) { return swapChainFramebuffers[index]; }
         VkRenderPass getRenderPass() { return renderPass; }
@@ -38,6 +39,7 @@ class EvilutionSwapChain {
         VkResult submitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex);
 
       private:
+        void init();
         void createSwapChain();
         void createImageViews();
         void createDepthResources();
@@ -66,6 +68,7 @@ class EvilutionSwapChain {
         VkExtent2D windowExtent;
 
         VkSwapchainKHR swapChain;
+        std::shared_ptr<EvilutionSwapChain> oldSwapChain;
 
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;

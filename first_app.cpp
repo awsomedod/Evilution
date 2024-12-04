@@ -1,4 +1,5 @@
 #include "first_app.hpp"
+#include "vulkan/vulkan_core.h"
 
 // std
 #include <array>
@@ -9,7 +10,7 @@ namespace evilution {
 FirstApp::FirstApp() {
         loadModel();
         createPipelineLayout();
-        createPipeline();
+        recreateSwapChain();
         createCommandBuffers();
 }
 
@@ -24,29 +25,26 @@ void FirstApp::run() {
         vkDeviceWaitIdle(evilutionDevice.device());
 }
 
-void FirstApp::sierpinski(
-    std::vector<EvilutionModel::Vertex> &vertices,
-    int depth,
-    glm::vec2 left,
-    glm::vec2 right,
-    glm::vec2 top) {
-  if (depth <= 0) {
-    vertices.push_back({top});
-    vertices.push_back({right});
-    vertices.push_back({left});
-  } else {
-    auto leftTop = 0.5f * (left + top);
-    auto rightTop = 0.5f * (right + top);
-    auto leftRight = 0.5f * (left + right);
-    sierpinski(vertices, depth - 1, left, leftRight, leftTop);
-    sierpinski(vertices, depth - 1, leftRight, right, rightTop);
-    sierpinski(vertices, depth - 1, leftTop, rightTop, top);
-  }
+void FirstApp::sierpinski(std::vector<EvilutionModel::Vertex>& vertices, int depth, glm::vec2 bottomLeft,
+                          glm::vec2 bottomRight, glm::vec2 top) {
+        if (depth == 0) {
+                vertices.push_back(EvilutionModel::Vertex{bottomLeft});
+                vertices.push_back(EvilutionModel::Vertex{bottomRight});
+                vertices.push_back(EvilutionModel::Vertex{top});
+        } else {
+                glm::vec2 bottomMid = {(bottomLeft.x + bottomRight.x) / 2.0f, bottomLeft.y};
+                glm::vec2 topMidLeft = {(bottomLeft.x + top.x) / 2.0f, (bottomLeft.y + top.y) / 2.0f};
+                glm::vec2 topMidRight = {(bottomRight.x + top.x) / 2.0f, (bottomRight.y + top.y) / 2.0f};
+                sierpinski(vertices, depth - 1, bottomLeft, bottomMid, topMidLeft);
+                sierpinski(vertices, depth - 1, bottomMid, bottomRight, topMidRight);
+                sierpinski(vertices, depth - 1, topMidLeft, topMidRight, top);
+        }
 }
 
 void FirstApp::loadModel() {
-        std::vector<EvilutionModel::Vertex> vertices = {};
-        sierpinski(vertices, 5, {-0.5f, 0.5f}, {0.5f, 0.5f}, {0.0f, -0.5f});
+        std::vector<EvilutionModel::Vertex> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+                                                        {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+                                                        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
         evilutionModel = std::make_unique<EvilutionModel>(evilutionDevice, vertices);
 }
 
@@ -65,16 +63,41 @@ void FirstApp::createPipelineLayout() {
 }
 
 void FirstApp::createPipeline() {
-        auto pipelineConfig =
-                EvilutionPipeline::defaultPipelineConfigInfo(evilutionSwapChain.width(), evilutionSwapChain.height());
-        pipelineConfig.renderPass = evilutionSwapChain.getRenderPass();
+        assert(evilutionSwapChain != nullptr && "Cannot create pipeline before swap chain!");
+        assert(pipelineLayout != VK_NULL_HANDLE && "Cannot create pipeline before pipeline layout!");
+
+        PipelineConfigInfo pipelineConfig{};
+        EvilutionPipeline::defaultPipelineConfigInfo(pipelineConfig);
+        pipelineConfig.renderPass = evilutionSwapChain->getRenderPass();
         pipelineConfig.pipelineLayout = pipelineLayout;
         evilutionPipeline = std::make_unique<EvilutionPipeline>(evilutionDevice, "shaders/simple_shader.vert.spv",
                                                                 "shaders/simple_shader.frag.spv", pipelineConfig);
 }
 
+void FirstApp::recreateSwapChain() {
+        auto extent = evilutionWindow.getExtent();
+        while (extent.width == 0 || extent.height == 0) {
+                extent = evilutionWindow.getExtent();
+                glfwWaitEvents();
+        }
+        vkDeviceWaitIdle(evilutionDevice.device());
+
+        if (evilutionSwapChain == nullptr) {
+                evilutionSwapChain = std::make_unique<EvilutionSwapChain>(evilutionDevice, extent);
+        } else {
+                evilutionSwapChain =
+                        std::make_unique<EvilutionSwapChain>(evilutionDevice, extent, std::move(evilutionSwapChain));
+                if (evilutionSwapChain->imageCount() != commandBuffers.size()) {
+                        freeCommandBuffers();
+                        createCommandBuffers();
+                }
+        }
+        // if reder pass is compatible, do nothing here
+        createPipeline();
+}
+
 void FirstApp::createCommandBuffers() {
-        commandBuffers.resize(evilutionSwapChain.imageCount());
+        commandBuffers.resize(evilutionSwapChain->imageCount());
 
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -85,52 +108,82 @@ void FirstApp::createCommandBuffers() {
         if (vkAllocateCommandBuffers(evilutionDevice.device(), &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
                 throw std::runtime_error("failed to allocate command buffers!");
         }
+}
 
-        for (int i = 0; i < commandBuffers.size(); i++) {
-                VkCommandBufferBeginInfo beginInfo{};
-                beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+void FirstApp::freeCommandBuffers() {
+        vkFreeCommandBuffers(evilutionDevice.device(), evilutionDevice.getCommandPool(),
+                             static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+        commandBuffers.clear();
+}
 
-                if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
-                        throw std::runtime_error("failed to begin recording command buffer!");
-                }
+void FirstApp::recordCommandBuffer(int imageIndex) {
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-                VkRenderPassBeginInfo renderPassInfo{};
-                renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-                renderPassInfo.renderPass = evilutionSwapChain.getRenderPass();
-                renderPassInfo.framebuffer = evilutionSwapChain.getFrameBuffer(i);
+        if (vkBeginCommandBuffer(commandBuffers[imageIndex], &beginInfo) != VK_SUCCESS) {
+                throw std::runtime_error("failed to begin recording command buffer!");
+        }
 
-                renderPassInfo.renderArea.offset = {0, 0};
-                renderPassInfo.renderArea.extent = evilutionSwapChain.getSwapChainExtent();
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = evilutionSwapChain->getRenderPass();
+        renderPassInfo.framebuffer = evilutionSwapChain->getFrameBuffer(imageIndex);
 
-                std::array<VkClearValue, 2> clearValues{};
-                clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
-                clearValues[1].depthStencil = {1.0f, 0};
-                renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-                renderPassInfo.pClearValues = clearValues.data();
+        renderPassInfo.renderArea.offset = {0, 0};
+        renderPassInfo.renderArea.extent = evilutionSwapChain->getSwapChainExtent();
 
-                vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        std::array<VkClearValue, 2> clearValues{};
+        clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+        clearValues[1].depthStencil = {1.0f, 0};
+        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassInfo.pClearValues = clearValues.data();
 
-                evilutionPipeline->bind(commandBuffers[i]);
-                evilutionModel->bind(commandBuffers[i]);
-                evilutionModel->draw(commandBuffers[i]);
+        vkCmdBeginRenderPass(commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-                vkCmdEndRenderPass(commandBuffers[i]);
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = static_cast<float>(evilutionSwapChain->width());
+        viewport.height = static_cast<float>(evilutionSwapChain->height());
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        VkRect2D scissor{{0, 0}, evilutionSwapChain->getSwapChainExtent()};
 
-                if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-                        throw std::runtime_error("failed to record command buffer!");
-                }
+        vkCmdSetViewport(commandBuffers[imageIndex], 0, 1, &viewport);
+        vkCmdSetScissor(commandBuffers[imageIndex], 0, 1, &scissor);
+
+        evilutionPipeline->bind(commandBuffers[imageIndex]);
+        evilutionModel->bind(commandBuffers[imageIndex]);
+        evilutionModel->draw(commandBuffers[imageIndex]);
+
+        vkCmdEndRenderPass(commandBuffers[imageIndex]);
+
+        if (vkEndCommandBuffer(commandBuffers[imageIndex]) != VK_SUCCESS) {
+                throw std::runtime_error("failed to record command buffer!");
         }
 }
 
 void FirstApp::drawFrame() {
         uint32_t imageIndex;
-        auto result = evilutionSwapChain.acquireNextImage(&imageIndex);
+        auto result = evilutionSwapChain->acquireNextImage(&imageIndex);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+                recreateSwapChain();
+                return;
+        }
 
         if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
                 throw std::runtime_error("failed to acquire swap chain image!");
         }
 
-        result = evilutionSwapChain.submitCommandBuffers(&commandBuffers[imageIndex], &imageIndex);
+        recordCommandBuffer(imageIndex);
+        result = evilutionSwapChain->submitCommandBuffers(&commandBuffers[imageIndex], &imageIndex);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || evilutionWindow.wasWindowResized()) {
+                evilutionWindow.resetWindowResizedFlag();
+                recreateSwapChain();
+                return;
+        }
+
         if (result != VK_SUCCESS) {
                 throw std::runtime_error("failed to present swap chain image!");
         }

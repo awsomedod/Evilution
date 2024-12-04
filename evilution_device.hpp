@@ -34,7 +34,7 @@ class EvilutionDevice {
 
         // Not copyable or movable
         EvilutionDevice(const EvilutionDevice&) = delete;
-        void operator=(const EvilutionDevice&) = delete;
+        EvilutionDevice& operator=(const EvilutionDevice&) = delete;
         EvilutionDevice(EvilutionDevice&&) = delete;
         EvilutionDevice& operator=(EvilutionDevice&&) = delete;
 

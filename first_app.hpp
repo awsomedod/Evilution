@@ -36,11 +36,14 @@ class FirstApp {
         void createPipelineLayout();
         void createPipeline();
         void createCommandBuffers();
+        void freeCommandBuffers();
         void drawFrame();
+        void recreateSwapChain();
+        void recordCommandBuffer(int imageIndex);
 
         EvilutionWindow evilutionWindow{WIDTH, HEIGHT, "Vulkan Tutorial"};
         EvilutionDevice evilutionDevice{evilutionWindow};
-        EvilutionSwapChain evilutionSwapChain{evilutionDevice, evilutionWindow.getExtent()};
+        std::unique_ptr<EvilutionSwapChain> evilutionSwapChain;
         std::unique_ptr<EvilutionPipeline> evilutionPipeline;
         VkPipelineLayout pipelineLayout;
         std::vector<VkCommandBuffer> commandBuffers;
