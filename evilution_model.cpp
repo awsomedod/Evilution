@@ -1,38 +1,81 @@
 #include "evilution_model.hpp"
+#include "vulkan/vulkan_core.h"
 
 namespace evilution {
 
-EvilutionModel::EvilutionModel(EvilutionDevice& device, const std::vector<Vertex>& vertices) : evilutionDevice{device} {
+EvilutionModel::EvilutionModel(EvilutionDevice& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices) : evilutionDevice{device} {
         createVertexBuffers(vertices);
+        createIndexBuffers(indices);
 }
 
 EvilutionModel::~EvilutionModel() {
         vkDestroyBuffer(evilutionDevice.device(), vertexBuffer, nullptr);
         vkFreeMemory(evilutionDevice.device(), vertexBufferMemory, nullptr);
+
+        vkDestroyBuffer(evilutionDevice.device(), indexBuffer, nullptr);
+        vkFreeMemory(evilutionDevice.device(), indexBufferMemory, nullptr);
+}
+
+void EvilutionModel::createIndexBuffers(const std::vector<uint32_t>& indices) {
+        indexCount = static_cast<uint32_t>(indices.size());
+        assert(indexCount % 3 == 0 && "Index count must be a multiple of 3");
+        VkDeviceSize bufferSize = sizeof(indices[0]) * indexCount;
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        evilutionDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                     stagingBuffer, stagingBufferMemory);
+
+        void* data;
+        vkMapMemory(evilutionDevice.device(), stagingBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, indices.data(), static_cast<size_t>(bufferSize));
+        vkUnmapMemory(evilutionDevice.device(), stagingBufferMemory);
+
+        evilutionDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+
+        evilutionDevice.copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+
+        vkDestroyBuffer(evilutionDevice.device(), stagingBuffer, nullptr);
+        vkFreeMemory(evilutionDevice.device(), stagingBufferMemory, nullptr);
 }
 
 void EvilutionModel::createVertexBuffers(const std::vector<Vertex>& vertices) {
         vertexCount = static_cast<uint32_t>(vertices.size());
         assert(vertexCount >= 3 && "Vertex count must be at least 3");
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertexCount;
-        evilutionDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+
+        evilutionDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                     vertexBuffer, vertexBufferMemory);
+                                     stagingBuffer, stagingBufferMemory);
 
         void* data;
-        vkMapMemory(evilutionDevice.device(), vertexBufferMemory, 0, bufferSize, 0, &data);
+        vkMapMemory(evilutionDevice.device(), stagingBufferMemory, 0, bufferSize, 0, &data);
         memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
-        vkUnmapMemory(evilutionDevice.device(), vertexBufferMemory);
+        vkUnmapMemory(evilutionDevice.device(), stagingBufferMemory);
+
+        evilutionDevice.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
+
+        evilutionDevice.copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+
+        vkDestroyBuffer(evilutionDevice.device(), stagingBuffer, nullptr);
+        vkFreeMemory(evilutionDevice.device(), stagingBufferMemory, nullptr);
 }
 
 void EvilutionModel::draw(VkCommandBuffer commandBuffer) {
-        vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
+        vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
 }
 
 void EvilutionModel::bind(VkCommandBuffer commandBuffer) {
         VkBuffer buffers[] = {vertexBuffer};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 }
 
 std::vector<VkVertexInputBindingDescription> EvilutionModel::Vertex::getBindingDescriptions() {

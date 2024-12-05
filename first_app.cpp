@@ -1,11 +1,20 @@
 #include "first_app.hpp"
 #include "vulkan/vulkan_core.h"
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+
 // std
 #include <array>
 #include <stdexcept>
 
 namespace evilution {
+
+struct SimplePushConstantData {
+        glm::vec2 offset;
+        alignas(16) glm::vec3 color;
+};
 
 FirstApp::FirstApp() {
         loadModel();
@@ -42,19 +51,27 @@ void FirstApp::sierpinski(std::vector<EvilutionModel::Vertex>& vertices, int dep
 }
 
 void FirstApp::loadModel() {
-        std::vector<EvilutionModel::Vertex> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-                                                        {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-                                                        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
-        evilutionModel = std::make_unique<EvilutionModel>(evilutionDevice, vertices);
+        std::vector<EvilutionModel::Vertex> vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+                                                        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+                                                        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+                                                        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+
+        const std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
+        evilutionModel = std::make_unique<EvilutionModel>(evilutionDevice, vertices, indices);
 }
 
 void FirstApp::createPipelineLayout() {
+        VkPushConstantRange pushConstantRange{};
+        pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        pushConstantRange.offset = 0;
+        pushConstantRange.size = sizeof(SimplePushConstantData);
+
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 0;
         pipelineLayoutInfo.pSetLayouts = nullptr;
-        pipelineLayoutInfo.pushConstantRangeCount = 0;
-        pipelineLayoutInfo.pPushConstantRanges = nullptr;
+        pipelineLayoutInfo.pushConstantRangeCount = 1;
+        pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
         if (vkCreatePipelineLayout(evilutionDevice.device(), &pipelineLayoutInfo, nullptr, &pipelineLayout) !=
             VK_SUCCESS) {
@@ -117,6 +134,10 @@ void FirstApp::freeCommandBuffers() {
 }
 
 void FirstApp::recordCommandBuffer(int imageIndex) {
+        static int frame = 0;
+        frame = (frame + 1) % 100;
+
+
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -133,7 +154,7 @@ void FirstApp::recordCommandBuffer(int imageIndex) {
         renderPassInfo.renderArea.extent = evilutionSwapChain->getSwapChainExtent();
 
         std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+        clearValues[0].color = {0.01f, 0.01f, 0.01f, 1.0f};
         clearValues[1].depthStencil = {1.0f, 0};
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
@@ -154,7 +175,16 @@ void FirstApp::recordCommandBuffer(int imageIndex) {
 
         evilutionPipeline->bind(commandBuffers[imageIndex]);
         evilutionModel->bind(commandBuffers[imageIndex]);
-        evilutionModel->draw(commandBuffers[imageIndex]);
+
+        for (int j = 0; j < 4; j++) {
+                SimplePushConstantData push{};
+                push.offset = {-0.5f + frame * 0.02f, -0.4f + j * 0.25f};
+                push.color = {0.0f, 0.0f, 0.2f + j * 0.2f};
+                vkCmdPushConstants(commandBuffers[imageIndex], pipelineLayout,
+                                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                   sizeof(SimplePushConstantData), &push);
+                evilutionModel->draw(commandBuffers[imageIndex]);
+        }
 
         vkCmdEndRenderPass(commandBuffers[imageIndex]);
 
