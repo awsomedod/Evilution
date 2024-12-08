@@ -16,7 +16,7 @@ void GravityPhysicsSystem::update(entt::registry& registry, float dt, unsigned i
 }
 
 void GravityPhysicsSystem::stepSimulation(entt::registry& registry, float dt) {
-    auto view = registry.view<Transform2DComponent, RigidBody2dComponent, PhysicsObjectComponent>();
+    auto view = registry.view<Transform2DComponent, RigidBody2dComponent>();
     
     // Loops through all pairs of entities and applies attractive force between them
     // Only iterate through unique pairs

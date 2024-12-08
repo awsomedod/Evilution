@@ -57,25 +57,10 @@ void SimpleRenderSystem::createPipeline(VkRenderPass renderPass) {
 
 void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, entt::registry& registry) {
     evilutionPipeline->bind(commandBuffer);
-    auto view = registry.view<Transform2DComponent, RenderComponent, PhysicsObjectComponent>();
+    auto view = registry.view<Transform2DComponent, RenderComponent>();
     for (entt::entity entity : view) {
         Transform2DComponent& transform2d = view.get<Transform2DComponent>(entity);
         RenderComponent& render = view.get<RenderComponent>(entity);
-
-        transform2d.rotation = glm::mod(transform2d.rotation + 0.01f, glm::two_pi<float>());
-        SimplePushConstantData push{};
-        push.offset = transform2d.translation;
-        push.color = render.color;
-        push.transform = transform2d.mat2();
-        vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                           sizeof(SimplePushConstantData), &push);
-        render.model->bind(commandBuffer);
-        render.model->draw(commandBuffer);
-    }
-    auto view2 = registry.view<Transform2DComponent, RenderComponent, Vec2FieldComponent>();
-    for (entt::entity entity : view2) {
-        Transform2DComponent& transform2d = view2.get<Transform2DComponent>(entity);
-        RenderComponent& render = view2.get<RenderComponent>(entity);
 
         transform2d.rotation = glm::mod(transform2d.rotation + 0.01f, glm::two_pi<float>());
         SimplePushConstantData push{};

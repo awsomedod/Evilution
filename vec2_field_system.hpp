@@ -12,6 +12,6 @@ class Vec2FieldSystem {
   public:
     static std::unique_ptr<EvilutionModel> createCircleModel(EvilutionDevice& device, unsigned int numSides);
     static std::unique_ptr<EvilutionModel> createSquareModel(EvilutionDevice& device, glm::vec2 offset);
-    void update(const GravityPhysicsSystem& physicsSystem, entt::registry& registry);
+    void update(const GravityPhysicsSystem& physicsSystem, entt::registry& registry, entt::registry& vec2FieldRegistry);
 };
 } // namespace evilution

@@ -46,10 +46,10 @@ std::unique_ptr<EvilutionModel> Vec2FieldSystem::createSquareModel(EvilutionDevi
     return std::make_unique<EvilutionModel>(device, vertices, indices);
 }
 
-void Vec2FieldSystem::update(const GravityPhysicsSystem& physicsSystem, entt::registry& registry) {
+void Vec2FieldSystem::update(const GravityPhysicsSystem& physicsSystem, entt::registry& registry, entt::registry& vec2FieldRegistry) {
     // For each field line we caluclate the net graviation force for that point in space
-    auto vfView = registry.view<Transform2DComponent, RigidBody2dComponent, Vec2FieldComponent>();
-    auto physicsObjsView = registry.view<Transform2DComponent, RigidBody2dComponent, PhysicsObjectComponent>();
+    auto vfView = vec2FieldRegistry.view<Transform2DComponent, RigidBody2dComponent>();
+    auto physicsObjsView = registry.view<Transform2DComponent, RigidBody2dComponent>();
     for (auto& vf : vfView) {
         glm::vec2 direction{};
         auto vfTransform = vfView.get<Transform2DComponent>(vf);

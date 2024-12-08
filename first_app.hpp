@@ -27,5 +27,6 @@ class FirstApp {
     EvilutionDevice evilutionDevice{evilutionWindow};
     EvilutionRenderer evilutionRenderer{evilutionWindow, evilutionDevice};
     entt::registry evilutionRegistry {};
+    entt::registry vec2FieldRegistry {};
 };
 } // namespace evilution

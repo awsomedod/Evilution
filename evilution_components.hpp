@@ -30,8 +30,4 @@ struct RigidBody2dComponent {
     glm::vec2 velocity;
     float mass{1.0f};
 };
-
-struct Vec2FieldComponent {};
-
-struct PhysicsObjectComponent {};
 } // namespace evilution
