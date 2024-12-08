@@ -20,13 +20,15 @@ FirstApp::~FirstApp() {}
 void FirstApp::run() {
     SimpleRenderSystem simpleRenderSystem{evilutionDevice, evilutionRenderer.getSwapChainRenderPass()};
     GravityPhysicsSystem gravitySystem{0.81f};
+    Vec2FieldSystem vecFieldSystem{};
 
     while (!evilutionWindow.shouldClose()) {
         glfwPollEvents();
 
         if (auto commandBuffer = evilutionRenderer.beginFrame()) {
             //update systems
-            gravitySystem.update(evilutionRegistry, 1.f / 60, 50);
+            gravitySystem.update(evilutionRegistry, 1.f / 60, 5);
+            vecFieldSystem.update(gravitySystem, evilutionRegistry);
 
             //render system
             evilutionRenderer.beginSwapChainRenderPass(commandBuffer);
@@ -59,27 +61,49 @@ void FirstApp::loadGameObjects() {
     // render.model = evilutionModel;
     // render.color = {0.1f, 0.8f, 0.1f};
     std::shared_ptr<EvilutionModel> circleModel = Vec2FieldSystem::createCircleModel(evilutionDevice, 64);
+    std::shared_ptr<EvilutionModel> squareModel = Vec2FieldSystem::createSquareModel(evilutionDevice, glm::vec2{.5f, .0f});
 
     auto redCircle = evilutionRegistry.create();
     Transform2DComponent& redTransform = evilutionRegistry.emplace<Transform2DComponent>(redCircle);
-    redTransform.translation = {0.f, 0.f};
-    redTransform.scale = glm::vec2{.05f};
     RigidBody2dComponent& redRigidbody = evilutionRegistry.emplace<RigidBody2dComponent>(redCircle);
-    redRigidbody.velocity = glm::vec2{0.f, 0.f};
-    redRigidbody.mass = 1.f;
     RenderComponent& redRender = evilutionRegistry.emplace<RenderComponent>(redCircle);
-    redRender.model = circleModel;
+    evilutionRegistry.emplace<PhysicsObjectComponent>(redCircle);
+    
+    redTransform.scale = glm::vec2{.05f};
+    redTransform.translation = {.5f, .5f};
     redRender.color = glm::vec3{1.0f, 0.0f, 0.0f};
+    redRigidbody.velocity = glm::vec2{-.5f, .0f};
+    redRender.model = circleModel;
 
     auto blueCircle = evilutionRegistry.create();
     Transform2DComponent& blueTransform = evilutionRegistry.emplace<Transform2DComponent>(blueCircle);
-    blueTransform.translation = {-.45f, 0.f};
-    blueTransform.scale = glm::vec2{.05f};
     RigidBody2dComponent& blueRigidbody = evilutionRegistry.emplace<RigidBody2dComponent>(blueCircle);
-    blueRigidbody.velocity = glm::vec2{0.f, 0.f};
-    blueRigidbody.mass = 1.f;
     RenderComponent& blueRender = evilutionRegistry.emplace<RenderComponent>(blueCircle);
-    blueRender.model = circleModel;
+    evilutionRegistry.emplace<PhysicsObjectComponent>(blueCircle);
+
+    blueTransform.scale = glm::vec2{.05f};
+    blueTransform.translation = {-.45f, -.25f};
     blueRender.color = glm::vec3{0.0f, 0.0f, 1.0f};
+    blueRigidbody.velocity = glm::vec2{.5f, .0f};
+    blueRender.model = circleModel;
+
+    // create vector field
+
+    int gridCount = 10;
+    for (int i = 0; i < gridCount; i++) {
+        for (int j = 0; j < gridCount; j++) {
+            auto vf = evilutionRegistry.create();
+            Transform2DComponent& vfTransform = evilutionRegistry.emplace<Transform2DComponent>(vf);
+            RenderComponent& vfRender = evilutionRegistry.emplace<RenderComponent>(vf);
+            evilutionRegistry.emplace<RigidBody2dComponent>(vf);
+            evilutionRegistry.emplace<Vec2FieldComponent>(vf);
+            vfTransform.scale = glm::vec2(0.02f);
+            vfTransform.translation = {
+                -1.0f + (i + 0.5f) * 2.0f / gridCount,
+                -1.0f + (j + 0.5f) * 2.0f / gridCount};
+            vfRender.color = glm::vec3(1.0f);
+            vfRender.model = squareModel;
+        }
+    }
 }
 } // namespace evilution
