@@ -1,12 +1,11 @@
 #pragma once
 
 #include "evilution_device.hpp"
-#include "evilution_game_object.hpp"
 #include "evilution_renderer.hpp"
 #include "evilution_window.hpp"
 
-// std
-#include <vector>
+#include <entt/entt.hpp>
+
 namespace evilution {
 class FirstApp {
   public:
@@ -27,6 +26,6 @@ class FirstApp {
     EvilutionWindow evilutionWindow{WIDTH, HEIGHT, "Evilution"};
     EvilutionDevice evilutionDevice{evilutionWindow};
     EvilutionRenderer evilutionRenderer{evilutionWindow, evilutionDevice};
-    std::vector<EvilutionGameObject> gameObjects;
+    entt::registry evilutionRegistry {};
 };
 } // namespace evilution

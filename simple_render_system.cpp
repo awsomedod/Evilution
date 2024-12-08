@@ -1,4 +1,5 @@
 #include "simple_render_system.hpp"
+#include "evilution_components.hpp"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -54,19 +55,22 @@ void SimpleRenderSystem::createPipeline(VkRenderPass renderPass) {
                                                             "shaders/simple_shader.frag.spv", pipelineConfig);
 }
 
-void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer,
-                                           std::vector<EvilutionGameObject>& gameObjects) {
+void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, entt::registry& registry) {
     evilutionPipeline->bind(commandBuffer);
-    for (auto& obj : gameObjects) {
-        obj.transform2d.rotation = glm::mod(obj.transform2d.rotation + 0.01f, glm::two_pi<float>());
+    auto view = registry.view<Transform2DComponent, RenderComponent>();
+    for (entt::entity entity : view) {
+        Transform2DComponent& transform2d = view.get<Transform2DComponent>(entity);
+        RenderComponent& render = view.get<RenderComponent>(entity);
+
+        transform2d.rotation = glm::mod(transform2d.rotation + 0.01f, glm::two_pi<float>());
         SimplePushConstantData push{};
-        push.offset = obj.transform2d.translation;
-        push.color = obj.color;
-        push.transform = obj.transform2d.mat2();
+        push.offset = transform2d.translation;
+        push.color = render.color;
+        push.transform = transform2d.mat2();
         vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                            sizeof(SimplePushConstantData), &push);
-        obj.model->bind(commandBuffer);
-        obj.model->draw(commandBuffer);
+        render.model->bind(commandBuffer);
+        render.model->draw(commandBuffer);
     }
 }
 } // namespace evilution
