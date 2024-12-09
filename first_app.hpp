@@ -28,5 +28,6 @@ class FirstApp {
     EvilutionRenderer evilutionRenderer{evilutionWindow, evilutionDevice};
     entt::registry evilutionRegistry {};
     entt::registry vec2FieldRegistry {};
+    int gridCount = 40;
 };
 } // namespace evilution

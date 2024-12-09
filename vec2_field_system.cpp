@@ -52,11 +52,11 @@ void Vec2FieldSystem::update(const GravityPhysicsSystem& physicsSystem, entt::re
     auto physicsObjsView = registry.view<Transform2DComponent, RigidBody2dComponent>();
     for (auto& vf : vfView) {
         glm::vec2 direction{};
-        auto vfTransform = vfView.get<Transform2DComponent>(vf);
-        auto vfRigidbody = vfView.get<RigidBody2dComponent>(vf);
+        auto& vfTransform = vfView.get<Transform2DComponent>(vf);
+        auto& vfRigidbody = vfView.get<RigidBody2dComponent>(vf);
         for (auto& obj : physicsObjsView) {
-            auto objTransform = physicsObjsView.get<Transform2DComponent>(obj);
-            auto objRigidbody = physicsObjsView.get<RigidBody2dComponent>(obj);
+            auto& objTransform = physicsObjsView.get<Transform2DComponent>(obj);
+            auto& objRigidbody = physicsObjsView.get<RigidBody2dComponent>(obj);
             direction += physicsSystem.computeForce(objTransform, objRigidbody, vfTransform, vfRigidbody);
         }
 

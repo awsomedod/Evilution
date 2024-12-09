@@ -19,8 +19,10 @@ $(TARGET): $(OBJECTS) $(vertObjFiles) $(fragObjFiles)
 	g++ $(OBJECTS) -o $(TARGET) $(LDFLAGS)
 
 # Rule for compiling cpp files to object files
-%.o: %.cpp *.hpp
-	g++ $(CFLAGS) -c $< -o $@
+%.o: %.cpp
+	g++ $(CFLAGS) -MMD -MP -c $< -o $@
+
+-include $(OBJECTS:.o=.d)
 
 # Shader compilation rule
 %.spv: %

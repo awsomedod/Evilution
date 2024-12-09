@@ -70,32 +70,45 @@ void FirstApp::loadGameObjects() {
     RenderComponent& redRender = evilutionRegistry.emplace<RenderComponent>(redCircle);
     
     redTransform.scale = glm::vec2{.05f};
-    redTransform.translation = {.5f, .5f};
+    redTransform.translation = {-.7f, .0f};
     redRender.color = glm::vec3{1.0f, 0.0f, 0.0f};
-    redRigidbody.velocity = glm::vec2{-.5f, .0f};
+    redRigidbody.velocity = glm::vec2{0.0f, -.5f};
+    redRigidbody.mass = 0.25f;
     redRender.model = circleModel;
-
+  
     auto blueCircle = evilutionRegistry.create();
     Transform2DComponent& blueTransform = evilutionRegistry.emplace<Transform2DComponent>(blueCircle);
     RigidBody2dComponent& blueRigidbody = evilutionRegistry.emplace<RigidBody2dComponent>(blueCircle);
     RenderComponent& blueRender = evilutionRegistry.emplace<RenderComponent>(blueCircle);
 
     blueTransform.scale = glm::vec2{.05f};
-    blueTransform.translation = {-.45f, -.25f};
+    blueTransform.translation = {0.0f, .0f};
     blueRender.color = glm::vec3{0.0f, 0.0f, 1.0f};
-    blueRigidbody.velocity = glm::vec2{.5f, .0f};
+    blueRigidbody.velocity = glm::vec2{0.0f, .0f};
+    blueRigidbody.mass = 0.25f;
     blueRender.model = circleModel;
+
+    auto greenCircle = evilutionRegistry.create();
+    Transform2DComponent& greenTransform = evilutionRegistry.emplace<Transform2DComponent>(greenCircle);
+    RigidBody2dComponent& greenRigidbody = evilutionRegistry.emplace<RigidBody2dComponent>(greenCircle);
+    RenderComponent& greenRender = evilutionRegistry.emplace<RenderComponent>(greenCircle);
+
+    greenTransform.scale = glm::vec2{.05f};
+    greenTransform.translation = {.7f, .0f};
+    greenRender.color = glm::vec3{0.0f, 1.0f, 0.0f};
+    greenRigidbody.velocity = glm::vec2{0.0f, .5f};
+    greenRigidbody.mass = 0.25f;
+    greenRender.model = circleModel;
 
     // create vector field
 
-    int gridCount = 10;
     for (int i = 0; i < gridCount; i++) {
         for (int j = 0; j < gridCount; j++) {
             auto vf = vec2FieldRegistry.create();
             Transform2DComponent& vfTransform = vec2FieldRegistry.emplace<Transform2DComponent>(vf);
             RenderComponent& vfRender = vec2FieldRegistry.emplace<RenderComponent>(vf);
             vec2FieldRegistry.emplace<RigidBody2dComponent>(vf);
-            vfTransform.scale = glm::vec2(0.02f);
+            vfTransform.scale = glm::vec2(0.005f);
             vfTransform.translation = {
                 -1.0f + (i + 0.5f) * 2.0f / gridCount,
                 -1.0f + (j + 0.5f) * 2.0f / gridCount};
