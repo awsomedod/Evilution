@@ -9,6 +9,11 @@
 
 namespace evilution {
 
+MetaBallsSystem::MetaBallsSystem(EvilutionDevice& device, entt::registry& evilutionRegistry)
+    : evilutionRegistry{evilutionRegistry}, evilutionDevice{device}, marchingSquaresObject{device, 1.f, 20, 20} {
+    metaBallField = [this](float x, float y) { return evaluateField(x, y); };
+}
+
 float MetaBallsSystem::implicitRectangle(float x, float y, float centerX, float centerY, float width, float height) {
     /*
     Returns > 1 for points inside the rectangle
@@ -39,8 +44,7 @@ float MetaBallsSystem::implicitCircle(float x, float y, float centerX, float cen
 
 void MetaBallsSystem::updateMetaBalls(float deltaTime) {
 
-    for (auto& metaBall : metaBallView) {
-        auto& ball = metaBallView.get<MetaBall>(metaBall);
+    for (auto& ball : metaBalls) {
 
         // Update position
         ball.center += ball.velocity * deltaTime;
@@ -59,27 +63,19 @@ void MetaBallsSystem::updateMetaBalls(float deltaTime) {
     updateMesh();
 }
 
-
-
 float MetaBallsSystem::evaluateField(float x, float y) const {
     float sum = 0.0f;
-    for (const auto& metaBall : metaBallView) {
-        auto& ball = metaBallView.get<MetaBall>(metaBall);
+    for (const auto& ball : metaBalls) {
         sum += implicitCircle(x, y, ball.center.x, ball.center.y, ball.radius);
     }
     return sum;
 }
 
 void MetaBallsSystem::addMetaBall(const glm::vec2& center, const glm::vec2& velocity, float radius) {
-    auto metaBall = evilutionRegistry.create();
-    evilutionRegistry.emplace<MetaBall>(metaBall, center, velocity, radius);
-    evilutionRegistry.emplace<RenderComponent>(metaBall);
-    metaBallView = evilutionRegistry.view<MetaBall, RenderComponent>();
+    metaBalls.push_back({center, velocity, radius});
 }
 
 void MetaBallsSystem::createInitialMesh() {
-    auto metaBallField = [this](float x, float y) { return evaluateField(x, y); };
-
     auto marchedSquares = marchingSquaresObject.marchingSquares(metaBallField);
 
     // Create entity with mesh
@@ -89,24 +85,26 @@ void MetaBallsSystem::createInitialMesh() {
 
     render.color = glm::vec3{1.0f, 0.0f, 0.0f}; // Default to red
     render.model = marchedSquares;
-
-    renderView = evilutionRegistry.view<RenderComponent>();
+    modelPtr = &render.model;
 }
 
 void MetaBallsSystem::updateMesh() {
-    auto metaBallField = [this](float x, float y) {
-        return evaluateField(x, y);
-    };
+    auto marchedSquares = marchingSquaresObject.marchingSquares(metaBallField);
+    *modelPtr = marchedSquares;
+}
 
-    auto marchedSquares = marchingSquaresObject.marchingSquares(
-        metaBallField
-    );
-
-    // Update all entities that have a RenderComponent
-   
-    for (auto entity : renderView) {
-        auto& render = renderView.get<RenderComponent>(entity);
-        render.model = marchedSquares;
-    }
+void MetaBallsSystem::updateMarchingSquaresParameters(float threshold, int samplesX, int samplesY) {
+    /*
+    Recreates the marching squares object with new parameters and updates the mesh
+    
+    Args:
+        threshold: The isovalue threshold for the marching squares algorithm
+        samplesX: Number of sample points in the X direction
+        samplesY: Number of sample points in the Y direction
+    */
+    marchingSquaresObject.~MarchingSquares();
+    new (&marchingSquaresObject) MarchingSquares{evilutionDevice, threshold, samplesX, samplesY};
+    createInitialMesh();
+    updateMesh();  // Update the mesh with the new parameters
 }
 } // namespace evilution

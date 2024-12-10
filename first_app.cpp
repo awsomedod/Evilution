@@ -31,6 +31,7 @@ void FirstApp::run() {
         currentTime = newTime;
 
         glfwPollEvents();
+        // mbSystem.updateMarchingSquaresParameters(1, 20, 20);
 
         if (auto commandBuffer = evilutionRenderer.beginFrame()) {
             // Update and render

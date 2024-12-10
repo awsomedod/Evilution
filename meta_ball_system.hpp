@@ -1,6 +1,7 @@
 #pragma once
 
 #include "evilution_components.hpp"
+#include "evilution_model.hpp"
 #include "marching_squares.hpp"
 
 #define GLM_FORCE_RADIANS
@@ -13,14 +14,14 @@ class MetaBallsSystem {
   public:
 
 
-    MetaBallsSystem(EvilutionDevice& device, entt::registry& evilutionRegistry) 
-        : evilutionRegistry{evilutionRegistry}, evilutionDevice{device} {}
+    MetaBallsSystem(EvilutionDevice& device, entt::registry& evilutionRegistry);
 
     void addMetaBall(const glm::vec2& center, const glm::vec2& velocity, float radius);
     float evaluateField(float x, float y) const;
     void updateMetaBalls(float deltaTime);
     void createInitialMesh();
     void updateMesh();
+    void updateMarchingSquaresParameters(float threshold, int samplesX, int samplesY);
 
 
   private:
@@ -28,12 +29,13 @@ class MetaBallsSystem {
     static float implicitCircle(float x, float y, float centerX, float centerY, float radius);
 
 
-    const float BOUNDS = .9f;
+    const float BOUNDS = .8f;
     entt::registry& evilutionRegistry;
     EvilutionDevice& evilutionDevice;
-    entt::view<entt::get_t<MetaBall, RenderComponent>> metaBallView;
-    MarchingSquares marchingSquaresObject {evilutionDevice, 1.f, 300, 300};
-    entt::view<entt::get_t<RenderComponent>> renderView;
+    std::vector<MetaBall> metaBalls;
+    MarchingSquares marchingSquaresObject;
+    std::shared_ptr<EvilutionModel>* modelPtr = nullptr;
+    std::function<float(float, float)> metaBallField;
 };
 } // namespace evilution
 

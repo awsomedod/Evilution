@@ -9,8 +9,10 @@ namespace evilution {
 class MarchingSquares {
   public:
 
-    MarchingSquares(EvilutionDevice& device, float threshold, float samplesX, float samplesY)
+    MarchingSquares(EvilutionDevice& device, float threshold, int samplesX, int samplesY)
         : device{device}, threshold{threshold}, samplesX{samplesX}, samplesY{samplesY} {}
+
+    
     std::shared_ptr<EvilutionModel> marchingSquares(std::function<float(float, float)> implicitFn);
 
   private:
@@ -19,7 +21,7 @@ class MarchingSquares {
 
     EvilutionDevice& device;
     float threshold;
-    float samplesX;
-    float samplesY;
+    int samplesX;
+    int samplesY;
 };
 } // namespace evilution
