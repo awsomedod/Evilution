@@ -1,0 +1,112 @@
+#include "meta_ball_system.hpp"
+#include "evilution_components.hpp"
+#include "marching_squares.hpp"
+
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+
+namespace evilution {
+
+float MetaBallsSystem::implicitRectangle(float x, float y, float centerX, float centerY, float width, float height) {
+    /*
+    Returns > 1 for points inside the rectangle
+            = 1 for points on the rectangle's perimeter
+            < 1 for points outside the rectangle
+
+    The function uses the max distance ratio to any edge, inverted so that:
+    - Inside points have values > 1
+    - Boundary points = 1
+    - Outside points < 1
+    */
+    float dx = std::abs(x - centerX);
+    float dy = std::abs(y - centerY);
+
+    float distanceRatioX = (width * 0.5f - dx) / (width * 0.5f);
+    float distanceRatioY = (height * 0.5f - dy) / (height * 0.5f);
+
+    // Use the minimum ratio to determine if we're inside/outside
+    // Adding 1 to invert the relationship (inside > 1, outside < 1)
+    return 2.0f - (1.0f / std::min(distanceRatioX, distanceRatioY));
+}
+
+float MetaBallsSystem::implicitCircle(float x, float y, float centerX, float centerY, float radius) {
+    float dx = x - centerX;
+    float dy = y - centerY;
+    return radius / std::sqrt(dx * dx + dy * dy);
+}
+
+void MetaBallsSystem::updateMetaBalls(float deltaTime) {
+
+    for (auto& metaBall : metaBallView) {
+        auto& ball = metaBallView.get<MetaBall>(metaBall);
+
+        // Update position
+        ball.center += ball.velocity * deltaTime;
+
+        // Bounce off boundaries
+        if (std::abs(ball.center.x) > BOUNDS - ball.radius) {
+            ball.velocity.x *= -1;
+            ball.center.x = std::copysign(BOUNDS - ball.radius, ball.center.x);
+        }
+        if (std::abs(ball.center.y) > BOUNDS - ball.radius) {
+            ball.velocity.y *= -1;
+            ball.center.y = std::copysign(BOUNDS - ball.radius, ball.center.y);
+        }
+    }
+
+    updateMesh();
+}
+
+
+
+float MetaBallsSystem::evaluateField(float x, float y) const {
+    float sum = 0.0f;
+    for (const auto& metaBall : metaBallView) {
+        auto& ball = metaBallView.get<MetaBall>(metaBall);
+        sum += implicitCircle(x, y, ball.center.x, ball.center.y, ball.radius);
+    }
+    return sum;
+}
+
+void MetaBallsSystem::addMetaBall(const glm::vec2& center, const glm::vec2& velocity, float radius) {
+    auto metaBall = evilutionRegistry.create();
+    evilutionRegistry.emplace<MetaBall>(metaBall, center, velocity, radius);
+    evilutionRegistry.emplace<RenderComponent>(metaBall);
+    metaBallView = evilutionRegistry.view<MetaBall, RenderComponent>();
+}
+
+void MetaBallsSystem::createInitialMesh() {
+    auto metaBallField = [this](float x, float y) { return evaluateField(x, y); };
+
+    auto marchedSquares = marchingSquaresObject.marchingSquares(metaBallField);
+
+    // Create entity with mesh
+    auto entity = evilutionRegistry.create();
+    auto& transform = evilutionRegistry.emplace<Transform2DComponent>(entity);
+    auto& render = evilutionRegistry.emplace<RenderComponent>(entity);
+
+    render.color = glm::vec3{1.0f, 0.0f, 0.0f}; // Default to red
+    render.model = marchedSquares;
+
+    renderView = evilutionRegistry.view<RenderComponent>();
+}
+
+void MetaBallsSystem::updateMesh() {
+    auto metaBallField = [this](float x, float y) {
+        return evaluateField(x, y);
+    };
+
+    auto marchedSquares = marchingSquaresObject.marchingSquares(
+        metaBallField
+    );
+
+    // Update all entities that have a RenderComponent
+   
+    for (auto entity : renderView) {
+        auto& render = renderView.get<RenderComponent>(entity);
+        render.model = marchedSquares;
+    }
+}
+} // namespace evilution

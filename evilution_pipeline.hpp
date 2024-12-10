@@ -36,6 +36,7 @@ class EvilutionPipeline {
 
     void bind(VkCommandBuffer commandBuffer);
     static void defaultPipelineConfigInfo(PipelineConfigInfo& configInfo);
+    static void linePipelineConfigInfo(PipelineConfigInfo& configInfo);
 
   private:
     static std::vector<char> readFile(const std::string& filepath);

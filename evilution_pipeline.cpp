@@ -189,6 +189,19 @@ void EvilutionPipeline::defaultPipelineConfigInfo(PipelineConfigInfo& configInfo
     configInfo.dynamicStateInfo.pDynamicStates = configInfo.dynamicStateEnables.data();
     configInfo.dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
     configInfo.dynamicStateInfo.flags = 0;
+
+    
+}
+
+void EvilutionPipeline::linePipelineConfigInfo(PipelineConfigInfo& configInfo) {
+    // Start with default configuration
+    defaultPipelineConfigInfo(configInfo);
+    
+    // Modify topology for line list
+    configInfo.inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    
+    // Optionally adjust line width if needed
+    configInfo.rasterizationInfo.lineWidth = 1.0f;  // You can adjust this value
 }
 
 } // namespace evilution

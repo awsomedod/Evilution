@@ -3,6 +3,7 @@
 #include "evilution_device.hpp"
 #include "evilution_renderer.hpp"
 #include "evilution_window.hpp"
+#include "meta_ball_system.hpp"
 
 #include <entt/entt.hpp>
 
@@ -27,7 +28,6 @@ class FirstApp {
     EvilutionDevice evilutionDevice{evilutionWindow};
     EvilutionRenderer evilutionRenderer{evilutionWindow, evilutionDevice};
     entt::registry evilutionRegistry {};
-    entt::registry vec2FieldRegistry {};
-    int gridCount = 40;
+    MetaBallsSystem mbSystem {evilutionDevice, evilutionRegistry};
 };
 } // namespace evilution

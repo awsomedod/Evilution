@@ -48,7 +48,7 @@ void SimpleRenderSystem::createPipeline(VkRenderPass renderPass) {
     assert(pipelineLayout != VK_NULL_HANDLE && "Cannot create pipeline before pipeline layout!");
 
     PipelineConfigInfo pipelineConfig{};
-    EvilutionPipeline::defaultPipelineConfigInfo(pipelineConfig);
+    EvilutionPipeline::linePipelineConfigInfo(pipelineConfig);
     pipelineConfig.renderPass = renderPass;
     pipelineConfig.pipelineLayout = pipelineLayout;
     evilutionPipeline = std::make_unique<EvilutionPipeline>(evilutionDevice, "shaders/simple_shader.vert.spv",
@@ -62,7 +62,6 @@ void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, entt::
         Transform2DComponent& transform2d = view.get<Transform2DComponent>(entity);
         RenderComponent& render = view.get<RenderComponent>(entity);
 
-        transform2d.rotation = glm::mod(transform2d.rotation + 0.01f, glm::two_pi<float>());
         SimplePushConstantData push{};
         push.offset = transform2d.translation;
         push.color = render.color;

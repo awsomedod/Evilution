@@ -30,4 +30,10 @@ struct RigidBody2dComponent {
     glm::vec2 velocity;
     float mass{1.0f};
 };
+
+struct MetaBall {
+    glm::vec2 center {};
+    glm::vec2 velocity {};
+    float radius {};
+};
 } // namespace evilution

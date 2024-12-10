@@ -20,7 +20,7 @@ EvilutionModel::~EvilutionModel() {
 
 void EvilutionModel::createIndexBuffers(const std::vector<uint32_t>& indices) {
     indexCount = static_cast<uint32_t>(indices.size());
-    assert(indexCount % 3 == 0 && "Index count must be a multiple of 3");
+    assert(indexCount % 2 == 0 && "Index count must be a multiple of 2 for line rendering");
     VkDeviceSize bufferSize = sizeof(indices[0]) * indexCount;
 
     VkBuffer stagingBuffer;
@@ -45,7 +45,7 @@ void EvilutionModel::createIndexBuffers(const std::vector<uint32_t>& indices) {
 
 void EvilutionModel::createVertexBuffers(const std::vector<Vertex>& vertices) {
     vertexCount = static_cast<uint32_t>(vertices.size());
-    assert(vertexCount >= 3 && "Vertex count must be at least 3");
+    assert(vertexCount >= 2 && "Vertex count must be at least 2 for line rendering");
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertexCount;
 
     VkBuffer stagingBuffer;
