@@ -2,6 +2,7 @@
 *.o
 *.out
 *.spv
+*.d
 
 # VS Code
 .vscode/

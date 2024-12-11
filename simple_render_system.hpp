@@ -2,7 +2,8 @@
 
 #include "evilution_device.hpp"
 #include "evilution_pipeline.hpp"
-#include "evilution_game_object.hpp"
+
+#include <entt/entt.hpp>
 
 // std
 #include <memory>
@@ -15,7 +16,7 @@ class SimpleRenderSystem {
     SimpleRenderSystem(const SimpleRenderSystem&) = delete;
     SimpleRenderSystem& operator=(const SimpleRenderSystem&) = delete;
 
-    void renderGameObjects(VkCommandBuffer commandBuffer, std::vector<EvilutionGameObject>& gameObjects);
+    void renderGameObjects(VkCommandBuffer commandBuffer, entt::registry& registry);
 
   private:
     void createPipelineLayout();
