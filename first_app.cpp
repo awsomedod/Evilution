@@ -24,14 +24,33 @@ void FirstApp::run() {
     
     float deltaTime = 0.0f;
     auto currentTime = std::chrono::high_resolution_clock::now();
+    
+    // Sample rate oscillation parameters
+    float totalTime = 0.0f;
+    const float cycleDuration = 60.0f;  // Complete cycle takes 10 seconds
+    const float minSampleRate = 5.0f;
+    const float maxSampleRate = 100.0f;
+    const float baseRate = (minSampleRate + maxSampleRate) / 2.0f;
+    const float amplitude = (maxSampleRate - minSampleRate) / 2.0f;
 
     while (!evilutionWindow.shouldClose()) {
         auto newTime = std::chrono::high_resolution_clock::now();
         deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
         currentTime = newTime;
 
+        // Update total time
+        totalTime += deltaTime;
+        
+        // Calculate current sample rate using asymmetric sine wave
+        float phase = (totalTime / cycleDuration) * 2.0f * glm::pi<float>();
+        float sineValue = std::sin(phase);
+        float asymmetricFactor = std::pow(std::abs(sineValue), 0.5f) * (sineValue >= 0 ? 1.0f : -1.0f);
+        int currentSampleRate = static_cast<int>(baseRate + amplitude * asymmetricFactor);
+        
+        // Update marching squares parameters with new sample rate
+        mbSystem.updateMarchingSquaresParameters(1, currentSampleRate, currentSampleRate);
+
         glfwPollEvents();
-        // mbSystem.updateMarchingSquaresParameters(1, 20, 20);
 
         if (auto commandBuffer = evilutionRenderer.beginFrame()) {
             // Update and render

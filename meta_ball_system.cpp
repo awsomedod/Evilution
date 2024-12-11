@@ -42,6 +42,14 @@ float MetaBallsSystem::implicitCircle(float x, float y, float centerX, float cen
     return radius / std::sqrt(dx * dx + dy * dy);
 }
 
+float MetaBallsSystem::evaluateField(float x, float y) const {
+    float sum = 0.0f;
+    for (const auto& ball : metaBalls) {
+        sum += implicitCircle(x, y, ball.center.x, ball.center.y, ball.radius);
+    }
+    return sum;
+}
+
 void MetaBallsSystem::updateMetaBalls(float deltaTime) {
 
     for (auto& ball : metaBalls) {
@@ -63,13 +71,6 @@ void MetaBallsSystem::updateMetaBalls(float deltaTime) {
     updateMesh();
 }
 
-float MetaBallsSystem::evaluateField(float x, float y) const {
-    float sum = 0.0f;
-    for (const auto& ball : metaBalls) {
-        sum += implicitCircle(x, y, ball.center.x, ball.center.y, ball.radius);
-    }
-    return sum;
-}
 
 void MetaBallsSystem::addMetaBall(const glm::vec2& center, const glm::vec2& velocity, float radius) {
     metaBalls.push_back({center, velocity, radius});
@@ -104,7 +105,6 @@ void MetaBallsSystem::updateMarchingSquaresParameters(float threshold, int sampl
     */
     marchingSquaresObject.~MarchingSquares();
     new (&marchingSquaresObject) MarchingSquares{evilutionDevice, threshold, samplesX, samplesY};
-    createInitialMesh();
     updateMesh();  // Update the mesh with the new parameters
 }
 } // namespace evilution

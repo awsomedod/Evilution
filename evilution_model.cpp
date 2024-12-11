@@ -1,10 +1,10 @@
 #include "evilution_model.hpp"
 #include "vulkan/vulkan_core.h"
+#include <vector>
 
 namespace evilution {
 
-EvilutionModel::EvilutionModel(EvilutionDevice& device, const std::vector<Vertex>& vertices,
-                               const std::vector<uint32_t>& indices)
+EvilutionModel::EvilutionModel(EvilutionDevice& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
     : evilutionDevice{device} {
     createVertexBuffers(vertices);
     createIndexBuffers(indices);
@@ -69,7 +69,7 @@ void EvilutionModel::createVertexBuffers(const std::vector<Vertex>& vertices) {
     vkFreeMemory(evilutionDevice.device(), stagingBufferMemory, nullptr);
 }
 
-void EvilutionModel::draw(VkCommandBuffer commandBuffer) { vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0); }
+void EvilutionModel::draw(VkCommandBuffer commandBuffer) { vkCmdDrawIndexed(commandBuffer, vertexCount, 1, 0, 0, 0); }
 
 void EvilutionModel::bind(VkCommandBuffer commandBuffer) {
     VkBuffer buffers[] = {vertexBuffer};

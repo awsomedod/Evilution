@@ -29,7 +29,7 @@ class MetaBallsSystem {
     static float implicitCircle(float x, float y, float centerX, float centerY, float radius);
 
 
-    const float BOUNDS = .8f;
+    const float BOUNDS = .9f;
     entt::registry& evilutionRegistry;
     EvilutionDevice& evilutionDevice;
     std::vector<MetaBall> metaBalls;
