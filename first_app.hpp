@@ -1,9 +1,8 @@
 #pragma once
 
-#include "evilution_device.hpp"
 #include "evilution_renderer.hpp"
-#include "evilution_window.hpp"
 
+// std
 #include <entt/entt.hpp>
 
 namespace evilution {

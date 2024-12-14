@@ -2,9 +2,6 @@
 
 #include "evilution_device.hpp"
 
-// std
-#include <string>
-#include <vector>
 
 namespace evilution {
 

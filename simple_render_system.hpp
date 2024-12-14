@@ -1,5 +1,6 @@
 #pragma once
 
+#include "evilution_camera.hpp"
 #include "evilution_device.hpp"
 #include "evilution_pipeline.hpp"
 
@@ -16,7 +17,7 @@ class SimpleRenderSystem {
     SimpleRenderSystem(const SimpleRenderSystem&) = delete;
     SimpleRenderSystem& operator=(const SimpleRenderSystem&) = delete;
 
-    void renderGameObjects(VkCommandBuffer commandBuffer, entt::registry& registry);
+    void renderGameObjects(VkCommandBuffer commandBuffer, entt::registry& registry, const EvilutionCamera& camera);
 
   private:
     void createPipelineLayout();

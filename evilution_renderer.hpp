@@ -1,6 +1,5 @@
 #pragma once
 
-#include "evilution_device.hpp"
 #include "evilution_swap_chain.hpp"
 #include "evilution_window.hpp"
 
@@ -20,6 +19,7 @@ class EvilutionRenderer {
     EvilutionRenderer& operator=(const EvilutionRenderer&) = delete;
 
     VkRenderPass getSwapChainRenderPass() const { return evilutionSwapChain->getRenderPass(); }
+    float getAspectRatio() const { return evilutionSwapChain->extentAspectRatio(); }
     bool isFrameInProgress() const { return isFrameStarted; }
 
     VkCommandBuffer getCurrentCommandBuffer() const {

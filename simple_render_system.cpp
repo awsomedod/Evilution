@@ -13,8 +13,7 @@
 namespace evilution {
 
 struct SimplePushConstantData {
-    glm::mat2 transform{1.0f};
-    glm::vec2 offset;
+    glm::mat4 transform{1.0f};
     alignas(16) glm::vec3 color;
 };
 
@@ -56,18 +55,20 @@ void SimpleRenderSystem::createPipeline(VkRenderPass renderPass) {
                                                             "shaders/simple_shader.frag.spv", pipelineConfig);
 }
 
-void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, entt::registry& registry) {
+void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, entt::registry& registry, const EvilutionCamera& camera) {
     evilutionPipeline->bind(commandBuffer);
-    auto view = registry.view<Transform2DComponent, RenderComponent>();
+
+    auto projectionView = camera.getProjection() * camera.getView();
+
+    auto view = registry.view<TransformComponent, RenderComponent>();
     for (entt::entity entity : view) {
-        Transform2DComponent& transform2d = view.get<Transform2DComponent>(entity);
+        TransformComponent& transform = view.get<TransformComponent>(entity);
         RenderComponent& render = view.get<RenderComponent>(entity);
 
-        transform2d.rotation = glm::mod(transform2d.rotation + 0.01f, glm::two_pi<float>());
         SimplePushConstantData push{};
-        push.offset = transform2d.translation;
         push.color = render.color;
-        push.transform = transform2d.mat2();
+        push.transform = projectionView * transform.mat4();
+        
         vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                            sizeof(SimplePushConstantData), &push);
         render.model->bind(commandBuffer);

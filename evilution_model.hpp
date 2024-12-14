@@ -12,14 +12,22 @@ namespace evilution {
 class EvilutionModel {
   public:
     struct Vertex {
-        glm::vec2 position;
+        glm::vec3 position;
         glm::vec3 color;
 
         static std::vector<VkVertexInputBindingDescription> getBindingDescriptions();
         static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
     };
 
-    EvilutionModel(EvilutionDevice& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
+
+    struct Builder {
+        std::vector<Vertex> vertices{};
+        std::vector<uint32_t> indices{};
+
+        void loadModel(const std::string& filepath);
+    };
+
+    EvilutionModel(EvilutionDevice& device, const Builder& builder);
     ~EvilutionModel();
 
     EvilutionModel(const EvilutionModel&) = delete;
@@ -31,10 +39,13 @@ class EvilutionModel {
   private:
     void createVertexBuffers(const std::vector<Vertex>& vertices);
     void createIndexBuffers(const std::vector<uint32_t>& indices);
+    
     EvilutionDevice& evilutionDevice;
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
     VkBuffer indexBuffer;
+
+    bool hasIndexBuffer = false;
     VkDeviceMemory indexBufferMemory;
     uint32_t vertexCount;
     uint32_t indexCount;

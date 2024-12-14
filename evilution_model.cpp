@@ -3,23 +3,30 @@
 
 namespace evilution {
 
-EvilutionModel::EvilutionModel(EvilutionDevice& device, const std::vector<Vertex>& vertices,
-                               const std::vector<uint32_t>& indices)
+EvilutionModel::EvilutionModel(EvilutionDevice& device, const Builder& builder)
     : evilutionDevice{device} {
-    createVertexBuffers(vertices);
-    createIndexBuffers(indices);
+    createVertexBuffers(builder.vertices);
+    createIndexBuffers(builder.indices);
 }
 
 EvilutionModel::~EvilutionModel() {
     vkDestroyBuffer(evilutionDevice.device(), vertexBuffer, nullptr);
     vkFreeMemory(evilutionDevice.device(), vertexBufferMemory, nullptr);
 
-    vkDestroyBuffer(evilutionDevice.device(), indexBuffer, nullptr);
-    vkFreeMemory(evilutionDevice.device(), indexBufferMemory, nullptr);
+    if (hasIndexBuffer) {
+        vkDestroyBuffer(evilutionDevice.device(), indexBuffer, nullptr);
+        vkFreeMemory(evilutionDevice.device(), indexBufferMemory, nullptr);
+    }
 }
 
 void EvilutionModel::createIndexBuffers(const std::vector<uint32_t>& indices) {
     indexCount = static_cast<uint32_t>(indices.size());
+    hasIndexBuffer = indexCount > 0;
+
+    if (!hasIndexBuffer) {
+        return;
+    }
+
     assert(indexCount % 3 == 0 && "Index count must be a multiple of 3");
     VkDeviceSize bufferSize = sizeof(indices[0]) * indexCount;
 
@@ -69,13 +76,21 @@ void EvilutionModel::createVertexBuffers(const std::vector<Vertex>& vertices) {
     vkFreeMemory(evilutionDevice.device(), stagingBufferMemory, nullptr);
 }
 
-void EvilutionModel::draw(VkCommandBuffer commandBuffer) { vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0); }
+void EvilutionModel::draw(VkCommandBuffer commandBuffer) { 
+    if (hasIndexBuffer) {
+        vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
+    } else {
+        vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
+    }
+}
 
 void EvilutionModel::bind(VkCommandBuffer commandBuffer) {
     VkBuffer buffers[] = {vertexBuffer};
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
-    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    if (hasIndexBuffer) {
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    }
 }
 
 std::vector<VkVertexInputBindingDescription> EvilutionModel::Vertex::getBindingDescriptions() {
@@ -90,7 +105,7 @@ std::vector<VkVertexInputAttributeDescription> EvilutionModel::Vertex::getAttrib
     std::vector<VkVertexInputAttributeDescription> attributeDescriptions(2);
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
-    attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
     attributeDescriptions[0].offset = offsetof(Vertex, position);
 
     attributeDescriptions[1].binding = 0;
