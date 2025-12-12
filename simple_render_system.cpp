@@ -14,7 +14,7 @@ namespace evilution {
 
 struct SimplePushConstantData {
     glm::mat4 transform{1.0f};
-    alignas(16) glm::vec3 color;
+    glm::mat4 normalMatrix{1.0f};
 };
 
 SimpleRenderSystem::SimpleRenderSystem(EvilutionDevice& device, VkRenderPass renderPass) : evilutionDevice{device} {
@@ -66,8 +66,9 @@ void SimpleRenderSystem::renderGameObjects(VkCommandBuffer commandBuffer, entt::
         RenderComponent& render = view.get<RenderComponent>(entity);
 
         SimplePushConstantData push{};
-        push.color = render.color;
-        push.transform = projectionView * transform.mat4();
+        auto modelMatrix = transform.mat4();
+        push.transform = projectionView * modelMatrix;
+        push.normalMatrix = transform.normalMatrix();
         
         vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                            sizeof(SimplePushConstantData), &push);

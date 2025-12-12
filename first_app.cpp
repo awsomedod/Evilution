@@ -57,15 +57,15 @@ void FirstApp::run() {
 }
 
 void FirstApp::loadGameObjects() {
-    std::shared_ptr<EvilutionModel> cubeModel = EvilutionModel::createModelFromFile(evilutionDevice, "models/smooth_vase.obj");
+    std::shared_ptr<EvilutionModel> vaseModel = EvilutionModel::createModelFromFile(evilutionDevice, "models/flat_vase.obj");
 
     auto gameObject = evilutionRegistry.create();
     auto& renderComponent = evilutionRegistry.emplace<RenderComponent>(gameObject);
     auto& transformComponent = evilutionRegistry.emplace<TransformComponent>(gameObject);
 
-    renderComponent.model = cubeModel;
+    renderComponent.model = vaseModel;
 
     transformComponent.translation = {0.0f, 0.0f, 2.5f};
-    transformComponent.scale = glm::vec3(3.f);
+    transformComponent.scale = {3.f, 1.5f, 3.f};
 }
 } // namespace evilution
