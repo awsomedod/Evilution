@@ -8,10 +8,6 @@ layout(push_constant) uniform Push {
     vec2 u_mouse;  // Normalized mouse position (0-1)
 } push;
 
-vec4 red() {
-    return vec4(1.0,0.0,0.0,1.0);
-}
-
 void main() {    
-    outColor = vec4(red());
+    outColor = vec4(abs(sin(push.u_time / 2.0)),abs(sin(push.u_time / 3.0)),abs(sin(push.u_time / 7.0)),1.0);
 }
