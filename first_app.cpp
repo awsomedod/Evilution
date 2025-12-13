@@ -7,13 +7,14 @@
 
 // std
 #include <array>
+#include <chrono>
 #include <stdexcept>
 
 namespace evilution {
 
 struct SimplePushConstantData {
-        glm::vec2 offset;
-        alignas(16) glm::vec3 color;
+        float u_time;
+        alignas(8) glm::vec2 u_mouse;  // Normalized mouse position (0-1)
 };
 
 FirstApp::FirstApp() {
@@ -51,10 +52,14 @@ void FirstApp::sierpinski(std::vector<EvilutionModel::Vertex>& vertices, int dep
 }
 
 void FirstApp::loadModel() {
-        std::vector<EvilutionModel::Vertex> vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-                                                        {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-                                                        {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-                                                        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+        // Full-screen quad covering entire screen in NDC (Normalized Device Coordinates)
+        // NDC goes from -1 to 1 in both x and y
+        std::vector<EvilutionModel::Vertex> vertices = {
+                {{-1.0f, -1.0f}},  // Bottom-left
+                {{ 1.0f, -1.0f}},  // Bottom-right
+                {{ 1.0f,  1.0f}},  // Top-right
+                {{-1.0f,  1.0f}}   // Top-left
+        };
 
         const std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
         evilutionModel = std::make_unique<EvilutionModel>(evilutionDevice, vertices, indices);
@@ -134,10 +139,6 @@ void FirstApp::freeCommandBuffers() {
 }
 
 void FirstApp::recordCommandBuffer(int imageIndex) {
-        static int frame = 0;
-        frame = (frame + 1) % 100;
-
-
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -176,15 +177,27 @@ void FirstApp::recordCommandBuffer(int imageIndex) {
         evilutionPipeline->bind(commandBuffers[imageIndex]);
         evilutionModel->bind(commandBuffers[imageIndex]);
 
-        for (int j = 0; j < 4; j++) {
-                SimplePushConstantData push{};
-                push.offset = {-0.5f + frame * 0.02f, -0.4f + j * 0.25f};
-                push.color = {0.0f, 0.0f, 0.2f + j * 0.2f};
-                vkCmdPushConstants(commandBuffers[imageIndex], pipelineLayout,
-                                   VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                                   sizeof(SimplePushConstantData), &push);
-                evilutionModel->draw(commandBuffers[imageIndex]);
-        }
+        // Calculate elapsed time since app start
+        static auto startTime = std::chrono::high_resolution_clock::now();
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float>(currentTime - startTime).count();
+
+        // Get mouse position
+        double mouseX, mouseY;
+        glfwGetCursorPos(evilutionWindow.getGLFWwindow(), &mouseX, &mouseY);
+        auto extent = evilutionSwapChain->getSwapChainExtent();
+
+        SimplePushConstantData push{};
+        push.u_time = time;
+        // Normalize mouse to 0-1 range, flip Y so bottom is 0
+        push.u_mouse = {
+                static_cast<float>(mouseX) / extent.width,
+                static_cast<float>(mouseY) / extent.height
+        };
+        vkCmdPushConstants(commandBuffers[imageIndex], pipelineLayout,
+                           VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                           sizeof(SimplePushConstantData), &push);
+        evilutionModel->draw(commandBuffers[imageIndex]);
 
         vkCmdEndRenderPass(commandBuffers[imageIndex]);
 
