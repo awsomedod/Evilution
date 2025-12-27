@@ -29,17 +29,17 @@ void main() {
 
     pct.b = pow((fragCoord.y * 3.0) - 1.5, 2.0);
     pct.r = pow((fragCoord.x *3.0) - 2.0, 2.0);
-    pct.r = smoothstep(pct.r,1.0, fragCoord.y);
-    pct.b = smoothstep(pct.b,1.0, fragCoord.y);
-    pct.g = smoothstep(pct.g,1.0, fragCoord.y);
+    float white = 0.001/pow(fragCoord.y - 0.5, 2.0);
     // pct.g = sin(fragCoord.x*PI);
     // pct.b = pow(fragCoord.x,0.5);
 
     color = mix(colorA, colorB, pct);
+    color = mix(color, vec3(1.0,1.0,1.0), white);
 
     // Plot transition lines for each channel
     color = mix(color,vec3(0.0,0.0,1.0),ploty(fragCoord,pct.b));
     color = mix(color,vec3(1.0,0.0,0.0),plot(fragCoord,pct.r));
+    color = mix(color, vec3(1.0,1.0,1.0), ploty(fragCoord,pct.g));
     // color = mix(color,vec3(0.0,0.0,1.0),plot(fragCoord,pct.b));
 
     outColor = vec4(color,1.0);
