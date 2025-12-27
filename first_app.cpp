@@ -15,6 +15,7 @@ namespace evilution {
 struct SimplePushConstantData {
         float u_time;
         alignas(8) glm::vec2 u_mouse;  // Normalized mouse position (0-1)
+        float u_aspect_ratio; // aspect ratio of the swap chain
 };
 
 FirstApp::FirstApp() {
@@ -194,6 +195,8 @@ void FirstApp::recordCommandBuffer(int imageIndex) {
                 static_cast<float>(mouseX) / extent.width,
                 static_cast<float>(mouseY) / extent.height
         };
+
+        push.u_aspect_ratio = evilutionSwapChain->extentAspectRatio();
         vkCmdPushConstants(commandBuffers[imageIndex], pipelineLayout,
                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                            sizeof(SimplePushConstantData), &push);

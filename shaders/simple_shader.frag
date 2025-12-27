@@ -7,40 +7,16 @@ layout(location = 0) out vec4 outColor;
 layout(push_constant) uniform Push {
     float u_time;
     vec2 u_mouse;  // Normalized mouse position (0-1)
+    float u_aspect_ratio; // aspect ratio of the swap chain
 } push;
 
-vec3 colorA = vec3(0.912,0.141,0.141);
-vec3 colorB = vec3(0.141,0.912,0.912);
-
-float plot (vec2 st, float pct){
-  return  smoothstep( pct-0.01, pct, st.y) -
-          smoothstep( pct, pct+0.01, st.y);
-}
-                
-float ploty (vec2 st, float pct){
-  return  smoothstep( pct-0.01, pct, st.x) -
-          smoothstep( pct, pct+0.01, st.x);
-}
-
 void main() {    
-    vec3 color = vec3(0.0);
+    float d = length(fragCoord);
 
-    vec3 pct = vec3(0);
+    d = sin(d * 8.0 + push.u_time)/8.0;
+    d = abs(d);
 
-    pct.b = pow((fragCoord.y * 3.0) - 1.5, 2.0);
-    pct.r = pow((fragCoord.x *3.0) - 2.0, 2.0);
-    float white = 0.001/pow(fragCoord.y - 0.5, 2.0);
-    // pct.g = sin(fragCoord.x*PI);
-    // pct.b = pow(fragCoord.x,0.5);
+    d = smoothstep(0.0, 0.1, d);
 
-    color = mix(colorA, colorB, pct);
-    color = mix(color, vec3(1.0,1.0,1.0), white);
-
-    // Plot transition lines for each channel
-    color = mix(color,vec3(0.0,0.0,1.0),ploty(fragCoord,pct.b));
-    color = mix(color,vec3(1.0,0.0,0.0),plot(fragCoord,pct.r));
-    color = mix(color, vec3(1.0,1.0,1.0), ploty(fragCoord,pct.g));
-    // color = mix(color,vec3(0.0,0.0,1.0),plot(fragCoord,pct.b));
-
-    outColor = vec4(color,1.0);
+    outColor = vec4(vec3(d), 1.0);
 }
