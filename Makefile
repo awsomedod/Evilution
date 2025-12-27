@@ -21,7 +21,9 @@ $(TARGET): *.cpp *.hpp
 .PHONY: test clean
 
 test: a.out
+	./compile.bat
 	./a.out
 
 clean:
 	rm -f a.out
+	rm -f *.spv

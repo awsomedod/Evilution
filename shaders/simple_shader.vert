@@ -8,5 +8,5 @@ void main() {
     gl_Position = vec4(position, 0.0, 1.0);
     
     // Convert from NDC (-1 to 1) to normalized coords (0 to 1)
-    fragCoord = (position + 1.0) * 0.5;
+    fragCoord = vec2((position.x + 1.0) * 0.5, (-position.y + 1.0) * 0.5);
 }
