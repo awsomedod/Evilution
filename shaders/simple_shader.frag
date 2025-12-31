@@ -19,27 +19,26 @@ vec3 palette(float t) {
     return a + b*cos(2*PI*(c*t+d));
 }
 
+float normLinf(vec2 v)
+{
+    return max(abs(v.x), abs(v.y));
+}
+
+float sdBox( in vec2 p, in vec2 b )
+{
+    vec2 d = abs(p);
+    d = sin(d *8.)/8.;
+    return length(max(d, 0.0)) + min(max(d.x,d.y),0.0);
+}
 
 
 void main() { 
-    vec3 finalColor = vec3(0.0);
-    vec2 uv = fragCoord;
-    vec2 uv0 = uv;
 
-    for (float i = 0.0; i < 4.0; i++) {
-        uv = (fract(uv * 1.5) - 0.5);   
-        float d = length(uv) * exp(-length(uv0));
+    float d = sdBox(fragCoord, vec2(0.5));
+    // d = sin(d *8.)/8.;
+    d = abs(d);
 
-        vec3 color = palette(length(uv0) + i*.4 + push.u_time*.4);
+    d = smoothstep(0.0, 0.1, d);
 
-        d = sin(d * 8.0 + push.u_time)/8.0;
-        d = abs(d);
-
-        d = (0.01/d); 
-        d= pow(d, 2.4);
-
-        finalColor += color * d;
-    }
-
-    outColor = vec4(finalColor, 1.0);
+    outColor = vec4(d, d, d, 1.0);
 }
