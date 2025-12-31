@@ -46,7 +46,7 @@ void main() {
     vec3 finalColor = vec3(0.0);
 
     for (float i = 0.0; i < 4.0; i++) {
-        uv = fract(uv * 1.2) - .5;
+        uv = fract(uv * 1.1) *1.5 - 0.75;
 
         float d = sdBox(uv, vec2(1)) * exp(-sdBox(uv, vec2(1)));
 
