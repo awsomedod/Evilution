@@ -26,19 +26,40 @@ float normLinf(vec2 v)
 
 float sdBox( in vec2 p, in vec2 b )
 {
-    vec2 d = abs(p);
-    d = sin(d *8.)/8.;
-    return length(max(d, 0.0)) + min(max(d.x,d.y),0.0);
+    vec2 d = abs(p) - b;
+    d = sin(d *8 + push.u_time)/8.;
+    return normLinf(max(d, 0.0)) + min(max(d.x,d.y),0.0);
 }
+
+float properSdBox( in vec2 p, in vec2 b )
+{
+    vec2 d = abs(p) - b;
+    return normLinf(max(d, 0.0)) + min(max(d.x,d.y),0.0);
+}
+
 
 
 void main() { 
 
-    float d = sdBox(fragCoord, vec2(0.5));
-    // d = sin(d *8.)/8.;
-    d = abs(d);
+    vec2 uv = fragCoord;
+    vec2 uv0 = uv;
+    vec3 finalColor = vec3(0.0);
 
-    d = smoothstep(0.0, 0.1, d);
+    for (float i = 0.0; i < 4.0; i++) {
+        uv = fract(uv * 1.2) - .5;
 
-    outColor = vec4(d, d, d, 1.0);
+        float d = sdBox(uv, vec2(1)) * exp(-sdBox(uv, vec2(1)));
+
+        vec3 color = palette(properSdBox(uv0, vec2(1)) + i*.4 + push.u_time);
+
+        d = sin(d *8)/8.;
+        d = abs(d);
+
+        d = .01/d;
+        d = pow(d, 2.4);
+
+        finalColor += color * d;
+    }
+
+    outColor = vec4(finalColor, 1.0);
 }
