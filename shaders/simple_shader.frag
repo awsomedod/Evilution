@@ -48,7 +48,7 @@ void main() {
     for (float i = 0.0; i < 4.0; i++) {
         uv = fract(uv * 1.1) *1.5 - 0.75;
 
-        float d = sdBox(uv, vec2(1)) * exp(-sdBox(uv, vec2(1)));
+        float d = sdBox(uv, vec2(1)) ;
 
         vec3 color = palette(properSdBox(uv0, vec2(1)) + i*.4 + push.u_time);
 
